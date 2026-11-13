@@ -1,5 +1,6 @@
 FROM searxng/searxng:latest
 ENV SEARXNG_BIND_ADDRESS=0.0.0.0
 ENV SEARXNG_PORT=8000
+ENV SEARXNG_SETTINGS_PATH=/tmp/searxng/settings.yml
 ENV TMPDIR=/tmp
 EXPOSE 8000
