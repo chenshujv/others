@@ -1,20 +1,20 @@
-# 使用官方已经打包好的极速镜像
 FROM searxng/searxng:latest
 
-# 1. 将你仓库里的 settings.yml 复制到可写的 /tmp 目录
-# （前提是你的仓库根目录里要有一个 settings.yml 文件，没有的话先用官方默认的）
-COPY settings.yml /tmp/searxng/settings.yml
-
-# 2. 强行告诉它去 /tmp 读取配置
+# 1. 设置只读环境下的可写配置路径
 ENV SEARXNG_SETTINGS_PATH=/tmp/searxng/settings.yml
+ENV SEARXNG_LIMITER=false
 
-# 3. 解决 Hostless 的端口和地址问题
-ENV SEARXNG_BIND_ADDRESS=0.0.0.0
+# 2. 暴露 Hostless 要求的端口
 ENV SEARXNG_PORT=8000
+ENV SEARXNG_BIND_ADDRESS=0.0.0.0
 EXPOSE 8000
 
-# 4. 拔掉官方的启动脚本（它一启动就报权限错误）
+# 3. 构建时将默认配置复制到可写目录
+RUN mkdir -p /tmp/searxng && \
+    cp /usr/local/searxng/searx/settings.yml /tmp/searxng/settings.yml
+
+# 4. 删除官方启动脚本（避免它尝试修改 /etc 权限）
 ENTRYPOINT []
 
-# 5. 用官方镜像里自带的虚拟环境 Python，直接启动！（解决 curl_cffi 缺失问题）
+# 5. 直接使用官方虚拟环境中的 Python 启动
 CMD ["/usr/local/searxng/searxng-venv/bin/python", "/usr/local/searxng/searx/webapp.py"]
