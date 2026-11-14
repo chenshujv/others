@@ -1,24 +1,20 @@
-FROM python:3.12-slim AS builder
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git build-essential libxslt-dev zlib1g-dev libffi-dev libssl-dev libxml2-dev \
-    && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-RUN git clone https://github.com/searxng/searxng.git .
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --upgrade pip setuptools wheel pyyaml typing_extensions
-RUN pip install --use-pep517 --no-build-isolation -e .
-FROM python:3.12-slim
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libxslt1.1 zlib1g libffi8 libssl3 libxml2 \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /opt/venv /opt/venv
-COPY --from=builder /app /app
-ENV PATH="/opt/venv/bin:$PATH"
-WORKDIR /app
+# 使用官方已经打包好的极速镜像
+FROM searxng/searxng:latest
+
+# 1. 将你仓库里的 settings.yml 复制到可写的 /tmp 目录
+# （前提是你的仓库根目录里要有一个 settings.yml 文件，没有的话先用官方默认的）
+COPY settings.yml /tmp/searxng/settings.yml
+
+# 2. 强行告诉它去 /tmp 读取配置
 ENV SEARXNG_SETTINGS_PATH=/tmp/searxng/settings.yml
-RUN mkdir -p /tmp/searxng && cp /app/searx/settings.yml /tmp/searxng/settings.yml
+
+# 3. 解决 Hostless 的端口和地址问题
 ENV SEARXNG_BIND_ADDRESS=0.0.0.0
 ENV SEARXNG_PORT=8000
 EXPOSE 8000
-CMD ["python", "/app/searx/webapp.py"]
+
+# 4. 拔掉官方的启动脚本（它一启动就报权限错误）
+ENTRYPOINT []
+
+# 5. 用官方镜像里自带的虚拟环境 Python，直接启动！（解决 curl_cffi 缺失问题）
+CMD ["/usr/local/searxng/searxng-venv/bin/python", "/usr/local/searxng/searx/webapp.py"]
