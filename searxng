@@ -3,6 +3,7 @@ ENV SEARXNG_BIND_ADDRESS=0.0.0.0
 ENV SEARXNG_PORT=8000
 ENV SEARXNG_SETTINGS_PATH=/tmp/searxng/settings.yml
 ENV TMPDIR=/tmp
+RUN pip install --no-cache-dir curl_cffi
 RUN mkdir -p /tmp/searxng && cp /usr/local/searxng/searx/settings.yml /tmp/searxng/settings.yml
 ENTRYPOINT []
 CMD ["python", "/usr/local/searxng/searx/webapp.py"]
