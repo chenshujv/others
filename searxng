@@ -1,10 +1,23 @@
-FROM python:3.12-slim
+FROM python:3.12-slim AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git build-essential libxslt-dev zlib1g-dev libffi-dev libssl-dev libxml2-dev \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-RUN apt-get update && apt-get install -y git build-essential libxslt-dev zlib1g-dev libffi-dev libssl-dev && rm -rf /var/lib/apt/lists/*
 RUN git clone https://github.com/searxng/searxng.git .
-RUN pip install --no-cache-dir -e .
-RUN mkdir -p /tmp/searxng && cp /app/searx/settings.yml /tmp/searxng/settings.yml
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --upgrade pip setuptools wheel pyyaml typing_extensions
+RUN pip install --use-pep517 --no-build-isolation -e .
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libxslt1.1 zlib1g libffi8 libssl3 libxml2 \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /app /app
+ENV PATH="/opt/venv/bin:$PATH"
+WORKDIR /app
 ENV SEARXNG_SETTINGS_PATH=/tmp/searxng/settings.yml
+RUN mkdir -p /tmp/searxng && cp /app/searx/settings.yml /tmp/searxng/settings.yml
 ENV SEARXNG_BIND_ADDRESS=0.0.0.0
 ENV SEARXNG_PORT=8000
 EXPOSE 8000
