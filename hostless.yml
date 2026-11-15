@@ -1,3 +1,3 @@
 build:
   system: docker
-  dockerfile_path: "./searxng" 
+  dockerfile_path: "./Ubuntu-sandbox" 
